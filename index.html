@@ -29,8 +29,11 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;o
 .auth-field input::placeholder{color:var(--cream-dim)}
 .auth-btn{width:100%;background:linear-gradient(135deg,#f5c842,var(--gold),var(--gold-deeper));color:var(--bg-darkest);border:1px solid rgba(255,255,255,.15);padding:14px;border-radius:30px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 24px rgba(245,166,35,.35);transition:transform .15s;text-transform:uppercase;letter-spacing:3px;margin-top:8px}
 .auth-btn:active{transform:scale(.96)}
-.auth-toggle{color:var(--cream-dim);font-size:13px;margin-top:16px;cursor:pointer}
+.auth-toggle{color:var(--cream-dim);font-size:13px;margin-top:16px;cursor:pointer;-webkit-tap-highlight-color:rgba(245,166,35,.2)}
 .auth-toggle span{color:var(--gold);font-weight:600}
+.auth-tabs{display:flex;gap:0;margin-bottom:24px;border-radius:12px;overflow:hidden;border:1px solid #2a2a2a}
+.auth-tab{flex:1;padding:12px;background:var(--bg-mid);color:var(--cream-dim);border:none;font-size:13px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:2px;transition:all .2s;font-family:var(--font-body)}
+.auth-tab.active{background:linear-gradient(135deg,var(--gold-dark),var(--gold-deeper));color:var(--bg-darkest)}
 .auth-error{color:var(--red-heart);font-size:13px;margin-top:12px;min-height:20px}
 #permission-screen{align-items:center;justify-content:center;text-align:center;padding:40px;background:var(--bg-darkest)}
 #permission-screen .logo{font-family:var(--font-logo);font-size:52px;font-weight:400;color:var(--gold);margin-bottom:8px;letter-spacing:8px;text-transform:uppercase;text-shadow:0 0 40px rgba(245,166,35,.2),0 2px 4px rgba(0,0,0,.3)}
@@ -181,6 +184,10 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;o
     <div class="logo">Rawpic</div>
     <div class="tagline">Capture the raw moment.</div>
     <div class="auth-form" id="auth-form">
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login">Log In</button>
+        <button class="auth-tab" id="tab-signup">Sign Up</button>
+      </div>
       <div class="auth-field hidden" id="username-field">
         <input type="text" id="auth-username" placeholder="Username" autocomplete="username">
       </div>
@@ -191,7 +198,6 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;o
         <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password">
       </div>
       <button class="auth-btn" id="auth-submit-btn">Log In</button>
-      <div class="auth-toggle" id="auth-toggle">Don't have an account? <span>Sign Up</span></div>
       <div class="auth-error" id="auth-error"></div>
     </div>
   </div>
@@ -393,15 +399,16 @@ $nav.addEventListener('click', e => {
 });
 
 // AUTH
-document.getElementById('auth-toggle').addEventListener('click', () => {
-  isSignupMode = !isSignupMode;
-  document.getElementById('username-field').classList.toggle('hidden', !isSignupMode);
-  document.getElementById('auth-submit-btn').textContent = isSignupMode ? 'Sign Up' : 'Log In';
-  document.getElementById('auth-toggle').innerHTML = isSignupMode
-    ? 'Already have an account? <span>Log In</span>'
-    : "Don't have an account? <span>Sign Up</span>";
+function setAuthMode(signup) {
+  isSignupMode = signup;
+  document.getElementById('username-field').classList.toggle('hidden', !signup);
+  document.getElementById('auth-submit-btn').textContent = signup ? 'Sign Up' : 'Log In';
+  document.getElementById('tab-signup').classList.toggle('active', signup);
+  document.getElementById('tab-login').classList.toggle('active', !signup);
   document.getElementById('auth-error').textContent = '';
-});
+}
+document.getElementById('tab-login').addEventListener('click', () => setAuthMode(false));
+document.getElementById('tab-signup').addEventListener('click', () => setAuthMode(true));
 
 document.getElementById('auth-submit-btn').addEventListener('click', async () => {
   const email = document.getElementById('auth-email').value.trim();
