@@ -322,11 +322,19 @@ body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;o
 </div>
 <div id="flash"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" id="sb-script"></script>
 <script>
 const SUPABASE_URL = 'https://bmajvfrfumgbrupytjad.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_eRnKq5yUKseHzagUoOFnwA_kh006qje';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let _sb;
+try {
+  const _lib = window.supabase;
+  _sb = _lib.createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch(e) {
+  document.getElementById('auth-error').textContent = 'Init error: ' + e.message;
+  console.error('Supabase init error:', e);
+}
+const db = _sb;
 
 let currentUser = null;
 let currentProfile = null;
@@ -423,14 +431,14 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
     if (isSignupMode) {
       const username = document.getElementById('auth-username').value.trim().toLowerCase().replace(/[^a-z0-9._]/g, '');
       if (!username) { errEl.textContent = 'Username is required'; btn.disabled = false; btn.textContent = 'Sign Up'; return; }
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await db.auth.signUp({
         email, password,
         options: { data: { username, name: username } }
       });
       if (error) throw error;
       if (data.user) { currentUser = data.user; await loadProfile(); showScreen('permission'); }
     } else {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await db.auth.signInWithPassword({ email, password });
       if (error) throw error;
       currentUser = data.user;
       await loadProfile();
@@ -445,7 +453,7 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
 });
 
 document.getElementById('logout-btn').addEventListener('click', async () => {
-  await supabase.auth.signOut();
+  await db.auth.signOut();
   currentUser = null;
   currentProfile = null;
   myLikes = new Set();
@@ -454,13 +462,13 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
 
 async function loadProfile() {
   if (!currentUser) return;
-  const { data } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+  const { data } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
   currentProfile = data;
 }
 
 async function loadMyLikes() {
   if (!currentUser) return;
-  const { data } = await supabase.from('likes').select('post_id').eq('user_id', currentUser.id);
+  const { data } = await db.from('likes').select('post_id').eq('user_id', currentUser.id);
   myLikes = new Set((data || []).map(l => l.post_id));
 }
 
@@ -651,11 +659,11 @@ document.getElementById('publish-btn').addEventListener('click', async () => {
     const ext = isVideoCapture ? 'webm' : 'jpg';
     const path = currentUser.id + '/' + Date.now() + '.' + ext;
     const contentType = isVideoCapture ? (capturedBlob.type || 'video/webm') : 'image/jpeg';
-    const { error: uploadErr } = await supabase.storage.from('posts').upload(path, capturedBlob, { contentType, upsert: false });
+    const { error: uploadErr } = await db.storage.from('posts').upload(path, capturedBlob, { contentType, upsert: false });
     if (uploadErr) throw uploadErr;
-    const { data: urlData } = supabase.storage.from('posts').getPublicUrl(path);
+    const { data: urlData } = db.storage.from('posts').getPublicUrl(path);
     const imageUrl = urlData.publicUrl;
-    const { error: postErr } = await supabase.from('posts').insert({
+    const { error: postErr } = await db.from('posts').insert({
       user_id: currentUser.id,
       image_url: imageUrl,
       caption: $captionInput.value.trim(),
@@ -695,7 +703,7 @@ async function renderFeed() {
     return;
   }
   const postIds = posts.map(p => p.id);
-  const { data: likeCounts } = await supabase.from('likes').select('post_id').in('post_id', postIds);
+  const { data: likeCounts } = await db.from('likes').select('post_id').in('post_id', postIds);
   const countMap = {};
   (likeCounts || []).forEach(l => { countMap[l.post_id] = (countMap[l.post_id] || 0) + 1; });
 
@@ -734,7 +742,7 @@ $feedScroll.addEventListener('click', async e => {
     if (!currentUser) return;
     const liked = myLikes.has(postId);
     if (liked) {
-      await supabase.from('likes').delete().eq('user_id', currentUser.id).eq('post_id', postId);
+      await db.from('likes').delete().eq('user_id', currentUser.id).eq('post_id', postId);
       myLikes.delete(postId);
       btn.classList.remove('liked');
       btn.querySelector('svg').setAttribute('fill', 'none');
@@ -742,7 +750,7 @@ $feedScroll.addEventListener('click', async e => {
       const c = parseInt(span.textContent || '0') - 1;
       span.textContent = c > 0 ? c : '';
     } else {
-      await supabase.from('likes').insert({ user_id: currentUser.id, post_id: postId });
+      await db.from('likes').insert({ user_id: currentUser.id, post_id: postId });
       myLikes.add(postId);
       btn.classList.add('liked');
       btn.querySelector('svg').setAttribute('fill', 'currentColor');
@@ -771,18 +779,18 @@ $searchInput.addEventListener('input', () => {
 async function renderSearch(query) {
   const q = (query || '').trim();
   if (!q) {
-    const { data } = await supabase.from('profiles').select('*').limit(20);
+    const { data } = await db.from('profiles').select('*').limit(20);
     renderSearchResults(data || []);
     return;
   }
-  const { data } = await supabase.from('profiles').select('*').or('username.ilike.%' + q + '%,name.ilike.%' + q + '%').limit(20);
+  const { data } = await db.from('profiles').select('*').or('username.ilike.%' + q + '%,name.ilike.%' + q + '%').limit(20);
   renderSearchResults(data || []);
 }
 
 async function renderSearchResults(users) {
   if (!currentUser) return;
   let followingIds = [];
-  const { data: followData } = await supabase.from('follows').select('following_id').eq('follower_id', currentUser.id);
+  const { data: followData } = await db.from('follows').select('following_id').eq('follower_id', currentUser.id);
   followingIds = (followData || []).map(f => f.following_id);
 
   if (users.length === 0) {
@@ -812,11 +820,11 @@ $searchResults.addEventListener('click', async e => {
     if (!currentUser) return;
     const isFollowing = btn.classList.contains('following');
     if (isFollowing) {
-      await supabase.from('follows').delete().eq('follower_id', currentUser.id).eq('following_id', targetId);
+      await db.from('follows').delete().eq('follower_id', currentUser.id).eq('following_id', targetId);
       btn.classList.remove('following');
       btn.textContent = 'Follow';
     } else {
-      await supabase.from('follows').insert({ follower_id: currentUser.id, following_id: targetId });
+      await db.from('follows').insert({ follower_id: currentUser.id, following_id: targetId });
       btn.classList.add('following');
       btn.textContent = 'Following';
     }
@@ -843,13 +851,13 @@ async function renderOwnProfile() {
   document.getElementById('profile-bio').style.display = p.bio ? 'block' : 'none';
 
   const [{ count: followingCount }, { count: followersCount }] = await Promise.all([
-    supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', currentUser.id),
-    supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', currentUser.id),
+    db.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', currentUser.id),
+    db.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', currentUser.id),
   ]);
   document.getElementById('following-count').textContent = followingCount || 0;
   document.getElementById('followers-count').textContent = followersCount || 0;
 
-  const { data: posts } = await supabase.from('posts').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+  const { data: posts } = await db.from('posts').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
   const myPosts = posts || [];
   $profileStats.textContent = myPosts.length + ' post' + (myPosts.length !== 1 ? 's' : '');
   $profileEmpty.style.display = myPosts.length ? 'none' : 'block';
@@ -866,7 +874,7 @@ async function viewUserProfile(userId) {
   document.getElementById('profile-actions').classList.add('hidden');
   document.getElementById('profile-follow-btn').classList.remove('hidden');
 
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', userId).single();
+  const { data: profile } = await db.from('profiles').select('*').eq('id', userId).single();
   if (!profile) return;
 
   const avatarEl = document.getElementById('profile-avatar');
@@ -878,18 +886,18 @@ async function viewUserProfile(userId) {
   document.getElementById('profile-bio').style.display = profile.bio ? 'block' : 'none';
 
   const [{ count: followingCount }, { count: followersCount }] = await Promise.all([
-    supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', userId),
-    supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', userId),
+    db.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', userId),
+    db.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', userId),
   ]);
   document.getElementById('following-count').textContent = followingCount || 0;
   document.getElementById('followers-count').textContent = followersCount || 0;
 
-  const { data: isFollow } = await supabase.from('follows').select('id').eq('follower_id', currentUser.id).eq('following_id', userId).maybeSingle();
+  const { data: isFollow } = await db.from('follows').select('id').eq('follower_id', currentUser.id).eq('following_id', userId).maybeSingle();
   const followBtn = document.getElementById('profile-follow-btn');
   followBtn.classList.toggle('following', !!isFollow);
   followBtn.textContent = isFollow ? 'Following' : 'Follow';
 
-  const { data: posts } = await supabase.from('posts').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+  const { data: posts } = await db.from('posts').select('*').eq('user_id', userId).order('created_at', { ascending: false });
   const userPosts = posts || [];
   $profileStats.textContent = userPosts.length + ' post' + (userPosts.length !== 1 ? 's' : '');
   $profileEmpty.style.display = userPosts.length ? 'none' : 'block';
@@ -907,13 +915,13 @@ document.getElementById('profile-follow-btn').addEventListener('click', async ()
   const btn = document.getElementById('profile-follow-btn');
   const isFollowing = btn.classList.contains('following');
   if (isFollowing) {
-    await supabase.from('follows').delete().eq('follower_id', currentUser.id).eq('following_id', viewingUserId);
+    await db.from('follows').delete().eq('follower_id', currentUser.id).eq('following_id', viewingUserId);
     btn.classList.remove('following');
     btn.textContent = 'Follow';
     const el = document.getElementById('followers-count');
     el.textContent = Math.max(0, parseInt(el.textContent) - 1);
   } else {
-    await supabase.from('follows').insert({ follower_id: currentUser.id, following_id: viewingUserId });
+    await db.from('follows').insert({ follower_id: currentUser.id, following_id: viewingUserId });
     btn.classList.add('following');
     btn.textContent = 'Following';
     const el = document.getElementById('followers-count');
@@ -932,7 +940,7 @@ document.getElementById('edit-profile-btn').addEventListener('click', async () =
   if (newName === null) return;
   const newBio = prompt('Bio:', currentProfile?.bio || '');
   if (newBio === null) return;
-  const { error } = await supabase.from('profiles').update({ name: newName.trim(), bio: newBio.trim() }).eq('id', currentUser.id);
+  const { error } = await db.from('profiles').update({ name: newName.trim(), bio: newBio.trim() }).eq('id', currentUser.id);
   if (!error) { await loadProfile(); renderOwnProfile(); }
   else alert('Update failed: ' + error.message);
 });
@@ -945,12 +953,12 @@ $profileGrid.addEventListener('click', async e => {
   const el = e.target.closest('[data-post-id]');
   if (!el) return;
   const postId = el.dataset.postId;
-  const { data: p } = await supabase.from('posts').select('*, profiles(username, name, avatar_url)').eq('id', postId).single();
+  const { data: p } = await db.from('posts').select('*, profiles(username, name, avatar_url)').eq('id', postId).single();
   if (!p) return;
   const profile = p.profiles || {};
   const username = profile.username || 'user';
   const liked = myLikes.has(p.id);
-  const { count: likeCount } = await supabase.from('likes').select('*', { count: 'exact', head: true }).eq('post_id', p.id);
+  const { count: likeCount } = await db.from('likes').select('*', { count: 'exact', head: true }).eq('post_id', p.id);
   const avatarHtml = profile.avatar_url ? '<img src="' + profile.avatar_url + '" alt="">' : username.charAt(0).toUpperCase();
 
   $postDetailContent.innerHTML = '<div class="post-card">' +
@@ -978,14 +986,14 @@ $postDetailContent.addEventListener('click', async e => {
   const postId = btn.dataset.id;
   const liked = myLikes.has(postId);
   if (liked) {
-    await supabase.from('likes').delete().eq('user_id', currentUser.id).eq('post_id', postId);
+    await db.from('likes').delete().eq('user_id', currentUser.id).eq('post_id', postId);
     myLikes.delete(postId);
     btn.classList.remove('liked');
     btn.querySelector('svg').setAttribute('fill', 'none');
     const span = btn.querySelector('span');
     span.textContent = Math.max(0, (parseInt(span.textContent || '0') - 1)) || '';
   } else {
-    await supabase.from('likes').insert({ user_id: currentUser.id, post_id: postId });
+    await db.from('likes').insert({ user_id: currentUser.id, post_id: postId });
     myLikes.add(postId);
     btn.classList.add('liked');
     btn.querySelector('svg').setAttribute('fill', 'currentColor');
@@ -998,7 +1006,7 @@ $postDetailContent.addEventListener('click', async e => {
 
 // INIT
 (async () => {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await db.auth.getSession();
   if (session && session.user) {
     currentUser = session.user;
     await loadProfile();
