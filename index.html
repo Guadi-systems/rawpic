@@ -446,7 +446,11 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
       showScreen('permission');
     }
   } catch (err) {
-    errEl.textContent = err.message || 'Authentication failed';
+    console.error('Auth error:', err);
+    let msg = err.message || 'Authentication failed';
+    if (msg.includes('already registered')) msg = 'Email already registered. Try logging in.';
+    if (msg.includes('duplicate key') || msg.includes('unique')) msg = 'Username already taken. Try another one.';
+    errEl.textContent = msg;
   }
   btn.disabled = false;
   btn.textContent = isSignupMode ? 'Sign Up' : 'Log In';
@@ -462,8 +466,23 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
 
 async function loadProfile() {
   if (!currentUser) return;
-  const { data } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
-  currentProfile = data;
+  const { data, error } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
+  if (data) {
+    currentProfile = data;
+  } else {
+    // Profile doesn't exist yet (trigger may have failed) — create it
+    const meta = currentUser.user_metadata || {};
+    const username = meta.username || 'user_' + currentUser.id.substring(0, 8);
+    const { data: newProfile, error: insertErr } = await db.from('profiles').insert({
+      id: currentUser.id,
+      username: username,
+      name: meta.name || username,
+      bio: '',
+      avatar_url: ''
+    }).select().single();
+    if (insertErr) console.error('Profile creation error:', insertErr);
+    currentProfile = newProfile;
+  }
 }
 
 async function loadMyLikes() {
