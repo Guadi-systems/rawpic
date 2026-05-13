@@ -1,0 +1,2267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Rawpic</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg-darkest: #0a0a0a;
+  --bg-dark: #111;
+  --bg-mid: #1a1a1a;
+  --bg-card: #1e1e1e;
+  --gold: #F5A623;
+  --gold-dark: #D4A020;
+  --gold-deeper: #C8962E;
+  --cream: #F5F0E8;
+  --cream-dim: #b8b0a4;
+  --red-heart: #e74c3c;
+  --font-logo: 'Bebas Neue', 'Arial Black', sans-serif;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --nav-height: 64px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg-darkest);
+  color: var(--cream);
+  font-family: var(--font-body);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* ── Film grain overlay ── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+}
+
+/* ── App shell ── */
+#app {
+  width: 100%;
+  height: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+.screen.active { display: flex; }
+
+/* ── Bottom navigation ── */
+#nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: var(--nav-height);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(180deg, #151515, var(--bg-dark));
+  border-top: 1px solid rgba(245,166,35,.1);
+  flex-shrink: 0;
+  z-index: 100;
+  box-shadow: 0 -4px 20px rgba(0,0,0,.3);
+}
+.nav-btn {
+  background: none;
+  border: none;
+  color: var(--cream-dim);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+  font-family: var(--font-body);
+  cursor: pointer;
+  padding: 6px 16px;
+  transition: color .2s;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+}
+.nav-btn.active { color: var(--gold); }
+.nav-btn svg { width: 24px; height: 24px; }
+.nav-btn.cam-btn {
+  background: linear-gradient(135deg, #f5c842, var(--gold), var(--gold-deeper));
+  color: var(--bg-darkest);
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  margin-top: -18px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(245,166,35,.4), 0 4px 12px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.3);
+  font-size: 0;
+  border: 2px solid rgba(255,255,255,.15);
+}
+.nav-btn.cam-btn svg { width: 26px; height: 26px; }
+
+/* ════════════════════════════════════
+   PERMISSION SCREEN
+   ════════════════════════════════════ */
+#permission-screen {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px;
+  background: var(--bg-darkest);
+}
+#permission-screen .logo {
+  font-family: var(--font-logo);
+  font-size: 52px;
+  font-weight: 400;
+  color: var(--gold);
+  margin-bottom: 8px;
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  text-shadow: 0 0 40px rgba(245,166,35,.2), 0 2px 4px rgba(0,0,0,.3);
+}
+#permission-screen .tagline {
+  color: var(--cream-dim);
+  font-size: 12px;
+  margin-bottom: 48px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+.perm-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold-dark), var(--gold-deeper));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  box-shadow: 0 4px 24px rgba(245,166,35,.2);
+}
+.perm-icon svg { width: 36px; height: 36px; color: var(--bg-darkest); }
+#permission-screen h2 {
+  font-family: var(--font-logo);
+  font-size: 26px;
+  margin-bottom: 12px;
+  color: var(--cream);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+#permission-screen p {
+  color: var(--cream-dim);
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 36px;
+  max-width: 280px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.perm-btn {
+  background: linear-gradient(135deg, #f5c842, var(--gold), var(--gold-deeper));
+  color: var(--bg-darkest);
+  border: 1px solid rgba(255,255,255,.15);
+  padding: 14px 48px;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 24px rgba(245,166,35,.35), 0 0 0 1px rgba(245,166,35,.1);
+  transition: transform .15s, box-shadow .15s;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+.perm-btn:active { transform: scale(.96); }
+.perm-denied { color: var(--red-heart); font-size: 13px; margin-top: 16px; display: none; }
+
+/* ════════════════════════════════════
+   CAMERA SCREEN
+   ════════════════════════════════════ */
+#camera-screen { background: #000; }
+.viewfinder-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#viewfinder {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* Film frame border */
+.viewfinder-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1.5px solid rgba(245,166,35,.15);
+  border-radius: 4px;
+  pointer-events: none;
+}
+/* Corner marks */
+.corner-mark {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: var(--gold);
+  border-style: solid;
+  border-width: 0;
+  opacity: .35;
+  pointer-events: none;
+}
+.corner-mark.tl { top: 16px; left: 16px; border-top-width: 2px; border-left-width: 2px; }
+.corner-mark.tr { top: 16px; right: 16px; border-top-width: 2px; border-right-width: 2px; }
+.corner-mark.bl { bottom: 16px; left: 16px; border-bottom-width: 2px; border-left-width: 2px; }
+.corner-mark.br { bottom: 16px; right: 16px; border-bottom-width: 2px; border-right-width: 2px; }
+
+.camera-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24px 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  background: linear-gradient(transparent, rgba(0,0,0,.6));
+}
+.flip-btn {
+  background: rgba(255,255,255,.1);
+  backdrop-filter: blur(8px);
+  border: none;
+  color: var(--cream);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.flip-btn svg { width: 22px; height: 22px; }
+
+/* Shutter button — brass look */
+.shutter-btn {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 3px solid var(--gold);
+  background: radial-gradient(circle at 35% 35%, #e8c86a, #C8962E 50%, #8a6914 100%);
+  cursor: pointer;
+  position: relative;
+  box-shadow:
+    0 0 0 4px rgba(0,0,0,.4),
+    0 0 20px rgba(245,166,35,.25),
+    inset 0 2px 4px rgba(255,255,255,.3),
+    inset 0 -2px 4px rgba(0,0,0,.3);
+  transition: transform .1s, box-shadow .1s;
+}
+.shutter-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%,-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #f0d68a, #C8962E);
+  box-shadow: inset 0 1px 2px rgba(255,255,255,.4);
+}
+.shutter-btn:active {
+  transform: scale(.92);
+  box-shadow:
+    0 0 0 4px rgba(0,0,0,.4),
+    0 0 10px rgba(245,166,35,.15),
+    inset 0 2px 6px rgba(0,0,0,.4);
+}
+
+/* Flash overlay */
+#flash {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9998;
+  transition: opacity .08s;
+}
+#flash.fire { opacity: .85; transition: opacity .02s; }
+
+/* Hidden canvas */
+#capture-canvas { display: none; }
+
+/* Recording indicator */
+.recording-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 82px;
+  height: 82px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.recording-ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.recording-ring circle {
+  fill: none;
+  stroke: #e74c3c;
+  stroke-width: 4;
+  stroke-dasharray: 238;
+  stroke-dashoffset: 238;
+  stroke-linecap: round;
+  transition: stroke-dashoffset .1s linear;
+}
+.shutter-btn.recording {
+  background: radial-gradient(circle at 35% 35%, #e74c3c, #c0392b 50%, #8b1a1a 100%) !important;
+  border-color: #e74c3c !important;
+  animation: pulseRecord 1s ease infinite;
+}
+.shutter-btn.recording::after {
+  background: radial-gradient(circle at 40% 40%, #ff6b6b, #e74c3c) !important;
+  border-radius: 6px !important;
+  width: 22px !important;
+  height: 22px !important;
+}
+@keyframes pulseRecord {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(0,0,0,.4), 0 0 20px rgba(231,76,60,.4); }
+  50% { box-shadow: 0 0 0 4px rgba(0,0,0,.4), 0 0 30px rgba(231,76,60,.6); }
+}
+.rec-timer {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(231,76,60,.85);
+  color: #fff;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+}
+.rec-timer::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  animation: blink 1s ease infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .3; }
+}
+.camera-hint {
+  position: absolute;
+  bottom: 110px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: rgba(255,255,255,.5);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  pointer-events: none;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Video in feed */
+.post-img-wrap video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Video badge on posts */
+.video-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0,0,0,.5);
+  backdrop-filter: blur(4px);
+  color: var(--cream);
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 5;
+}
+.video-badge::before {
+  content: '▶';
+  font-size: 8px;
+}
+/* Video in edit screen */
+#edit-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Profile grid video */
+.profile-grid video {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.profile-grid video:active { opacity: .7; }
+
+/* ════════════════════════════════════
+   EDIT SCREEN
+   ════════════════════════════════════ */
+#edit-screen {
+  background: var(--bg-darkest);
+}
+.edit-photo-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  position: relative;
+  min-height: 0;
+}
+.edit-photo-frame {
+  position: relative;
+  width: 100%;
+  max-height: 100%;
+  aspect-ratio: 3/4;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-mid);
+  box-shadow: 0 4px 30px rgba(0,0,0,.5);
+}
+#edit-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.caption-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 32px 16px 16px;
+  background: linear-gradient(transparent, rgba(0,0,0,.7));
+}
+.caption-input {
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(245,166,35,.3);
+  color: #fff;
+  font-size: 15px;
+  font-family: var(--font-body);
+  padding: 8px 0;
+  outline: none;
+}
+.caption-input::placeholder { color: rgba(255,255,255,.45); }
+
+/* Filter selector */
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  flex-shrink: 0;
+  scrollbar-width: none;
+}
+.filter-bar::-webkit-scrollbar { display: none; }
+.filter-opt {
+  flex-shrink: 0;
+  text-align: center;
+  cursor: pointer;
+}
+.filter-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 2px solid transparent;
+  transition: border-color .2s;
+}
+.filter-opt.active .filter-thumb { border-color: var(--gold); }
+.filter-name {
+  font-size: 10px;
+  margin-top: 4px;
+  color: var(--cream-dim);
+}
+.filter-opt.active .filter-name { color: var(--gold); }
+
+/* Edit actions */
+.edit-actions {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px 20px;
+  flex-shrink: 0;
+}
+.btn-publish {
+  flex: 1;
+  background: linear-gradient(135deg, #f5c842, var(--gold), var(--gold-deeper));
+  color: var(--bg-darkest);
+  border: 1px solid rgba(255,255,255,.1);
+  padding: 14px;
+  border-radius: 28px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(245,166,35,.3);
+  transition: transform .12s;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+.btn-publish:active { transform: scale(.97); }
+.btn-discard {
+  background: var(--bg-mid);
+  color: var(--cream-dim);
+  border: 1px solid #333;
+  padding: 14px 24px;
+  border-radius: 28px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: transform .12s;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.btn-discard:active { transform: scale(.97); }
+
+/* CSS Filters */
+.filter-none { filter: none; }
+.filter-bw { filter: grayscale(1) contrast(1.1); }
+.filter-sepia { filter: sepia(.8) contrast(1.05) saturate(1.1); }
+.filter-cool { filter: saturate(.9) brightness(1.05) hue-rotate(15deg); }
+.filter-warm { filter: sepia(.25) saturate(1.3) brightness(1.05); }
+.filter-vintage { filter: sepia(.35) contrast(1.15) saturate(.85) brightness(.95); }
+
+/* ════════════════════════════════════
+   FEED SCREEN
+   ════════════════════════════════════ */
+#feed-screen { background: var(--bg-darkest); }
+.feed-header {
+  padding: 18px 20px 14px;
+  text-align: center;
+  flex-shrink: 0;
+  border-bottom: 1px solid #1a1a1a;
+  background: linear-gradient(180deg, rgba(245,166,35,.03) 0%, transparent 100%);
+}
+.feed-header h1 {
+  font-family: var(--font-logo);
+  font-weight: 400;
+  font-size: 36px;
+  color: var(--gold);
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  text-shadow: 0 0 30px rgba(245,166,35,.15);
+}
+.feed-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
+}
+.feed-empty {
+  text-align: center;
+  padding: 60px 32px;
+  color: var(--cream-dim);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Post card */
+.post-card {
+  margin: 16px 12px;
+  background: var(--bg-card);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,.5), 0 1px 0 rgba(245,166,35,.06);
+  border: 1px solid rgba(255,255,255,.04);
+}
+.post-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+}
+.post-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f5c842, var(--gold-deeper));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--bg-darkest);
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(245,166,35,.2);
+  border: 1.5px solid rgba(245,166,35,.3);
+}
+.post-username { font-weight: 600; font-size: 14px; color: var(--cream); }
+.post-time { font-size: 10px; color: var(--cream-dim); text-transform: uppercase; letter-spacing: .5px; }
+.post-img-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/5;
+  background: var(--bg-mid);
+  overflow: hidden;
+}
+.post-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.post-caption-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24px 14px 12px;
+  background: linear-gradient(transparent, rgba(0,0,0,.65));
+  font-size: 14px;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+.post-actions {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px 12px;
+  gap: 6px;
+}
+.like-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--cream-dim);
+  font-size: 13px;
+  transition: color .2s;
+}
+.like-btn svg {
+  width: 22px;
+  height: 22px;
+  transition: transform .25s cubic-bezier(.175,.885,.32,1.275), color .2s;
+}
+.like-btn.liked { color: var(--gold); }
+.like-btn.liked svg { transform: scale(1.2); }
+.like-btn.pop svg { animation: flashPop .4s ease; }
+
+@keyframes flashPop {
+  0% { transform: scale(1); filter: brightness(1); }
+  25% { transform: scale(1.5); filter: brightness(1.8); }
+  50% { transform: scale(.9); filter: brightness(1.2); }
+  100% { transform: scale(1.2); filter: brightness(1); }
+}
+
+/* ════════════════════════════════════
+   PROFILE SCREEN
+   ════════════════════════════════════ */
+#profile-screen { background: var(--bg-darkest); }
+.profile-header {
+  text-align: center;
+  padding: 28px 20px 20px;
+  flex-shrink: 0;
+}
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--gold-deeper));
+  margin: 0 auto 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-logo);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--bg-darkest);
+  box-shadow: 0 4px 20px rgba(245,166,35,.3), 0 0 0 3px rgba(245,166,35,.15);
+  border: 2px solid var(--gold);
+  overflow: hidden;
+}
+.profile-name {
+  font-family: var(--font-logo);
+  font-size: 28px;
+  color: var(--cream);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+}
+.profile-stats {
+  font-size: 11px;
+  color: var(--cream-dim);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+.profile-grid-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px;
+}
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+}
+.profile-grid img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+  border-radius: 2px;
+}
+.profile-empty {
+  text-align: center;
+  padding: 48px 32px;
+  color: var(--cream-dim);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ════════════════════════════════════
+   SEARCH / DISCOVER SCREEN
+   ════════════════════════════════════ */
+#search-screen { background: var(--bg-darkest); }
+.search-bar-wrap {
+  padding: 16px 16px 8px;
+  flex-shrink: 0;
+}
+.search-bar-wrap h2 {
+  font-family: var(--font-logo);
+  color: var(--gold);
+  font-size: 28px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 5px;
+}
+.search-input-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--bg-mid);
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 10px 14px;
+  gap: 10px;
+}
+.search-input-wrap svg { width: 18px; height: 18px; color: var(--cream-dim); flex-shrink: 0; }
+.search-input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--cream);
+  font-size: 15px;
+  font-family: var(--font-body);
+  outline: none;
+}
+.search-input::placeholder { color: var(--cream-dim); }
+.search-results {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px 16px;
+}
+.search-user-card {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #1e1e1e;
+  gap: 12px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.search-user-card:active { background: rgba(245,166,35,.05); border-radius: 12px; }
+.search-user-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f5c842, var(--gold-deeper));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--bg-darkest);
+  flex-shrink: 0;
+  box-shadow: 0 2px 10px rgba(245,166,35,.2);
+  border: 1.5px solid rgba(245,166,35,.2);
+}
+.search-user-info { flex: 1; min-width: 0; }
+.search-user-name { font-weight: 700; font-size: 13px; color: var(--cream); text-transform: uppercase; letter-spacing: 1px; }
+.search-user-bio { font-size: 12px; color: var(--cream-dim); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.search-user-photos { font-size: 11px; color: var(--cream-dim); margin-top: 2px; }
+.follow-btn {
+  background: linear-gradient(135deg, #f5c842, var(--gold), var(--gold-deeper));
+  color: var(--bg-darkest);
+  border: 1px solid rgba(255,255,255,.1);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .12s, opacity .2s;
+  flex-shrink: 0;
+}
+.follow-btn:active { transform: scale(.95); }
+.follow-btn.following {
+  background: var(--bg-mid);
+  color: var(--cream-dim);
+  border: 1px solid #333;
+}
+
+/* ════════════════════════════════════
+   EDIT PROFILE MODAL
+   ════════════════════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.75);
+  z-index: 500;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.modal-sheet {
+  background: var(--bg-dark);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 430px;
+  padding: 24px 20px 40px;
+  animation: slideUp .3s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.modal-sheet h3 {
+  font-family: var(--font-logo);
+  font-size: 26px;
+  color: var(--gold);
+  margin-bottom: 20px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+}
+.modal-field {
+  margin-bottom: 16px;
+}
+.modal-field label {
+  display: block;
+  font-size: 10px;
+  color: var(--cream-dim);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 600;
+}
+.modal-field input, .modal-field textarea {
+  width: 100%;
+  background: var(--bg-mid);
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--cream);
+  font-size: 15px;
+  font-family: var(--font-body);
+  outline: none;
+  transition: border-color .2s;
+}
+.modal-field input:focus, .modal-field textarea:focus {
+  border-color: var(--gold);
+}
+.modal-field textarea {
+  resize: none;
+  height: 72px;
+}
+.modal-avatar-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.modal-avatar-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--gold-deeper));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-logo);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--bg-darkest);
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 3px solid var(--gold);
+}
+.modal-avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.avatar-photo-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.avatar-photo-picker-label {
+  font-size: 11px;
+  color: var(--cream-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  width: 100%;
+  text-align: center;
+  margin-bottom: 4px;
+}
+.avatar-photo-opt {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .2s, transform .15s;
+  flex-shrink: 0;
+}
+.avatar-photo-opt img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.avatar-photo-opt.selected { border-color: var(--gold); transform: scale(1.1); }
+.avatar-photo-opt:active { transform: scale(.95); }
+.avatar-no-photos {
+  font-size: 13px;
+  color: var(--cream-dim);
+  text-align: center;
+  padding: 8px 0;
+  line-height: 1.4;
+}
+.emoji-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.emoji-opt {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background: var(--bg-mid);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  transition: border-color .2s;
+}
+.emoji-opt.selected { border-color: var(--gold); }
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+.modal-save {
+  flex: 1;
+  background: linear-gradient(135deg, #f5c842, var(--gold), var(--gold-deeper));
+  color: var(--bg-darkest);
+  border: 1px solid rgba(255,255,255,.1);
+  padding: 14px;
+  border-radius: 28px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.modal-cancel {
+  background: var(--bg-mid);
+  color: var(--cream-dim);
+  border: 1px solid #333;
+  padding: 14px 24px;
+  border-radius: 28px;
+  font-size: 12px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* Profile edit button */
+.profile-edit-btn {
+  background: var(--bg-mid);
+  color: var(--cream);
+  border: 1px solid #333;
+  padding: 8px 24px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: border-color .2s;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.profile-edit-btn:hover { border-color: var(--gold); }
+.profile-back-btn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: var(--bg-mid);
+  border: 1px solid #333;
+  color: var(--cream);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: border-color .2s;
+}
+.profile-back-btn:hover { border-color: var(--gold); }
+.profile-back-btn svg { width: 18px; height: 18px; }
+.post-username {
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.post-username:hover { color: var(--gold); }
+.profile-bio {
+  font-size: 13px;
+  color: var(--cream-dim);
+  margin-top: 8px;
+  max-width: 260px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.4;
+}
+.profile-followers {
+  font-size: 11px;
+  color: var(--cream-dim);
+  margin-top: 6px;
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.profile-followers span { color: var(--cream); font-weight: 600; }
+
+/* ── Post Detail Modal ── */
+.post-detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.85);
+  backdrop-filter: blur(8px);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.post-detail-overlay .post-card {
+  max-width: 430px;
+  width: 100%;
+  margin: 0;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.post-detail-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(0,0,0,.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid #333;
+  color: var(--cream);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 510;
+  font-size: 18px;
+  line-height: 1;
+}
+.post-detail-close:hover { border-color: var(--gold); }
+
+/* Make grid images clickable */
+.profile-grid img {
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.profile-grid img:active { opacity: .7; }
+
+/* ── Utility ── */
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- ====== PERMISSION SCREEN ====== -->
+  <div id="permission-screen" class="screen active">
+    <div class="logo">Rawpic</div>
+    <div class="tagline">Capture the raw moment.</div>
+    <div class="perm-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    </div>
+    <h2>Camera Access</h2>
+    <p>Rawpic is all about real moments. We need your camera to let you capture — no uploads, no fakes, just raw.</p>
+    <button class="perm-btn" id="grant-perm-btn">Allow Camera</button>
+    <div class="perm-denied" id="perm-denied-msg">Camera access was denied. Please allow it in your browser settings and reload.</div>
+  </div>
+
+  <!-- ====== CAMERA SCREEN ====== -->
+  <div id="camera-screen" class="screen">
+    <div class="viewfinder-wrap">
+      <video id="viewfinder" autoplay playsinline muted></video>
+      <div class="corner-mark tl"></div>
+      <div class="corner-mark tr"></div>
+      <div class="corner-mark bl"></div>
+      <div class="corner-mark br"></div>
+      <div class="rec-timer" id="rec-timer">0:00</div>
+      <div class="camera-hint" id="camera-hint">TAP PHOTO · HOLD VIDEO</div>
+      <div class="camera-controls">
+        <button class="flip-btn" id="flip-btn" title="Flip camera">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/></svg>
+        </button>
+        <button class="shutter-btn" id="shutter-btn">
+          <div class="recording-ring" id="recording-ring">
+            <svg viewBox="0 0 82 82"><circle cx="41" cy="41" r="38" id="rec-progress"/></svg>
+          </div>
+        </button>
+        <div style="width:44px"></div>
+      </div>
+    </div>
+    <canvas id="capture-canvas"></canvas>
+  </div>
+
+  <!-- ====== EDIT SCREEN ====== -->
+  <div id="edit-screen" class="screen">
+    <div class="edit-photo-wrap">
+      <div class="edit-photo-frame">
+        <img id="edit-photo" src="" alt="Captured photo">
+        <video id="edit-video" autoplay playsinline muted loop class="hidden"></video>
+        <div class="caption-overlay">
+          <input class="caption-input" id="caption-input" type="text" placeholder="Write a caption..." maxlength="120" autocomplete="off">
+        </div>
+      </div>
+    </div>
+    <div class="filter-bar" id="filter-bar"></div>
+    <div class="edit-actions">
+      <button class="btn-discard" id="discard-btn">Discard</button>
+      <button class="btn-publish" id="publish-btn">Publish</button>
+    </div>
+  </div>
+
+  <!-- ====== FEED SCREEN ====== -->
+  <div id="feed-screen" class="screen">
+    <div class="feed-header"><h1>Rawpic</h1></div>
+    <div class="feed-scroll" id="feed-scroll"></div>
+  </div>
+
+  <!-- ====== SEARCH / DISCOVER SCREEN ====== -->
+  <div id="search-screen" class="screen">
+    <div class="search-bar-wrap">
+      <h2>Discover</h2>
+      <div class="search-input-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="search-input" id="search-input" type="text" placeholder="Search people..." autocomplete="off">
+      </div>
+    </div>
+    <div class="search-results" id="search-results"></div>
+  </div>
+
+  <!-- ====== PROFILE SCREEN ====== -->
+  <div id="profile-screen" class="screen">
+    <div class="profile-header" style="position:relative">
+      <button class="profile-back-btn hidden" id="profile-back-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="profile-avatar" id="profile-avatar">📷</div>
+      <div class="profile-name" id="profile-name">You</div>
+      <div class="profile-bio" id="profile-bio"></div>
+      <div class="profile-followers" id="profile-followers">
+        <div><span id="following-count">0</span> following</div>
+        <div><span id="followers-count">0</span> followers</div>
+      </div>
+      <div class="profile-stats" id="profile-stats">0 photos</div>
+      <button class="profile-edit-btn" id="edit-profile-btn">Edit Profile</button>
+    </div>
+    <div class="profile-grid-scroll">
+      <div class="profile-grid" id="profile-grid"></div>
+      <div class="profile-empty" id="profile-empty">
+        No photos yet.<br>Open the camera and capture your first moment.
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== EDIT PROFILE MODAL ====== -->
+  <div class="modal-overlay hidden" id="edit-profile-modal">
+    <div class="modal-sheet">
+      <h3>Edit Profile</h3>
+      <div class="modal-avatar-picker">
+        <div class="modal-avatar-preview" id="modal-avatar-preview">📷</div>
+        <div class="avatar-photo-picker" id="avatar-photo-picker"></div>
+        <div class="emoji-picker" id="emoji-picker"></div>
+      </div>
+      <div class="modal-field">
+        <label>Display Name</label>
+        <input type="text" id="modal-name" maxlength="24" placeholder="Your name">
+      </div>
+      <div class="modal-field">
+        <label>Username</label>
+        <input type="text" id="modal-username" maxlength="20" placeholder="username">
+      </div>
+      <div class="modal-field">
+        <label>Bio</label>
+        <textarea id="modal-bio" maxlength="100" placeholder="Tell the world something raw..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-cancel" id="modal-cancel">Cancel</button>
+        <button class="modal-save" id="modal-save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== POST DETAIL MODAL ====== -->
+  <div class="post-detail-overlay hidden" id="post-detail-overlay">
+    <button class="post-detail-close" id="post-detail-close">✕</button>
+    <div id="post-detail-content"></div>
+  </div>
+
+  <!-- ====== BOTTOM NAV ====== -->
+  <nav id="nav" class="hidden">
+    <button class="nav-btn active" data-screen="feed">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Feed</span>
+    </button>
+    <button class="nav-btn" data-screen="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <span>Discover</span>
+    </button>
+    <button class="nav-btn cam-btn" data-screen="camera">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    </button>
+    <button class="nav-btn" data-screen="profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>Profile</span>
+    </button>
+  </nav>
+</div>
+
+<!-- Flash overlay -->
+<div id="flash"></div>
+
+<script>
+// ══════════════════════════════════════
+// APP STATE
+// ══════════════════════════════════════
+// User profile (persisted)
+let userProfile = JSON.parse(localStorage.getItem('rawpic_profile') || 'null') || {
+  name: 'You',
+  username: 'you',
+  avatar: '📷',
+  bio: '',
+  following: [],
+};
+function saveProfile() { localStorage.setItem('rawpic_profile', JSON.stringify(userProfile)); }
+
+let currentScreen = 'permission';
+let facingMode = 'environment';
+let stream = null;
+let capturedDataUrl = null;
+let capturedVideoBlob = null;
+let isVideoCapture = false;
+let currentFilter = 'none';
+let mediaRecorder = null;
+let recordingChunks = [];
+let recordingTimer = null;
+let recordingStart = 0;
+const MAX_VIDEO_SEC = 5;
+let posts = JSON.parse(localStorage.getItem('rawpic_posts') || '[]');
+let viewingUser = null;
+
+// Avatar emoji options
+const AVATAR_EMOJIS = ['📷','⚡','🔥','🌙','✨','🎞️','🌿','🐾','💀','🎵','🌊','☀️'];
+
+// Filters definition
+const FILTERS = [
+  { id: 'none',    name: 'Original', css: 'filter-none' },
+  { id: 'bw',      name: 'B&W',      css: 'filter-bw' },
+  { id: 'sepia',   name: 'Sepia',    css: 'filter-sepia' },
+  { id: 'cool',    name: 'Cool',     css: 'filter-cool' },
+  { id: 'warm',    name: 'Warm',     css: 'filter-warm' },
+  { id: 'vintage', name: 'Vintage',  css: 'filter-vintage' },
+];
+
+// Mock users for search/discover
+const MOCK_USERS = [
+  { username: 'luna.raw', name: 'Luna Martínez', avatar: '🌙', bio: 'Capturing moonlit moments', photos: 47, followers: 312 },
+  { username: 'kai_captures', name: 'Kai Thompson', avatar: '🐾', bio: 'Dogs & mountains. That\'s it.', photos: 89, followers: 1204 },
+  { username: 'noir.vision', name: 'Noir', avatar: '💀', bio: 'B&W only. No exceptions.', photos: 156, followers: 2890 },
+  { username: 'ana.pola', name: 'Ana Polaroid', avatar: '✨', bio: 'Living in golden hour', photos: 63, followers: 445 },
+  { username: 'raw.marco', name: 'Marco Reyes', avatar: '🔥', bio: 'Street photography desde BA', photos: 34, followers: 198 },
+  { username: 'sol.captures', name: 'Sol Fernández', avatar: '☀️', bio: 'Montañas y atardeceres', photos: 72, followers: 567 },
+  { username: 'pixel.free', name: 'Pixel', avatar: '🌊', bio: 'No AI. No edits. Just real.', photos: 41, followers: 890 },
+  { username: 'the.real.cam', name: 'Cameron Dale', avatar: '🎞️', bio: 'Film kid in a digital world', photos: 28, followers: 156 },
+  { username: 'wild.ari', name: 'Ariana Bosque', avatar: '🌿', bio: 'Nature raw and unfiltered', photos: 95, followers: 723 },
+  { username: 'beats.visual', name: 'DJ Visuals', avatar: '🎵', bio: 'Sound you can see', photos: 19, followers: 342 },
+];
+
+// Mock posts
+const MOCK_POSTS = [
+  { id: 'm1', username: 'luna.raw', avatar: 'L', img: 'https://picsum.photos/id/1015/600/750', caption: 'Mountain mornings hit different', filter: 'warm', time: Date.now()-3600000*2, likes: 24, liked: false },
+  { id: 'm2', username: 'kai_captures', avatar: 'K', img: 'https://picsum.photos/id/1025/600/750', caption: 'Good boy energy 🐕', filter: 'none', time: Date.now()-3600000*5, likes: 67, liked: false },
+  { id: 'm3', username: 'noir.vision', avatar: 'N', img: 'https://picsum.photos/id/1036/600/750', caption: '', filter: 'bw', time: Date.now()-3600000*8, likes: 41, liked: false },
+  { id: 'm4', username: 'ana.pola', avatar: 'A', img: 'https://picsum.photos/id/1040/600/750', caption: 'Last light ✨', filter: 'vintage', time: Date.now()-3600000*14, likes: 33, liked: false },
+  { id: 'm5', username: 'raw.marco', avatar: 'M', img: 'https://picsum.photos/id/1047/600/750', caption: 'Found this on the walk home', filter: 'sepia', time: Date.now()-3600000*20, likes: 19, liked: false },
+];
+
+// ══════════════════════════════════════
+// DOM REFS
+// ══════════════════════════════════════
+const $app = document.getElementById('app');
+const $nav = document.getElementById('nav');
+const $permScreen = document.getElementById('permission-screen');
+const $cameraScreen = document.getElementById('camera-screen');
+const $editScreen = document.getElementById('edit-screen');
+const $feedScreen = document.getElementById('feed-screen');
+const $profileScreen = document.getElementById('profile-screen');
+const $viewfinder = document.getElementById('viewfinder');
+const $canvas = document.getElementById('capture-canvas');
+const $flash = document.getElementById('flash');
+const $editPhoto = document.getElementById('edit-photo');
+const $captionInput = document.getElementById('caption-input');
+const $filterBar = document.getElementById('filter-bar');
+const $feedScroll = document.getElementById('feed-scroll');
+const $profileGrid = document.getElementById('profile-grid');
+const $profileEmpty = document.getElementById('profile-empty');
+const $profileStats = document.getElementById('profile-stats');
+const $searchScreen = document.getElementById('search-screen');
+const $searchInput = document.getElementById('search-input');
+const $searchResults = document.getElementById('search-results');
+const $editProfileModal = document.getElementById('edit-profile-modal');
+
+const screens = {
+  permission: $permScreen,
+  camera: $cameraScreen,
+  edit: $editScreen,
+  feed: $feedScreen,
+  search: $searchScreen,
+  profile: $profileScreen,
+};
+
+// ══════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════
+function showScreen(name) {
+  currentScreen = name;
+  Object.values(screens).forEach(s => s.classList.remove('active'));
+  screens[name].classList.add('active');
+
+  // Nav highlight
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.screen === name || (b.dataset.screen === 'camera' && name === 'camera'));
+  });
+
+  // Show/hide nav
+  $nav.classList.toggle('hidden', name === 'permission' || name === 'edit');
+
+  // Actions on show
+  if (name === 'camera') {
+    startCamera();
+    const hint = document.getElementById('camera-hint');
+    if (hint) { hint.style.display = 'block'; setTimeout(() => { hint.style.opacity = '0'; setTimeout(() => { hint.style.display = 'none'; hint.style.opacity = '1'; }, 2000); }, 3000); }
+  }
+  else stopCamera();
+  if (name === 'feed') renderFeed();
+  if (name === 'search') renderSearch();
+  if (name === 'profile' && !viewingUser) renderProfile();
+}
+
+$nav.addEventListener('click', e => {
+  const btn = e.target.closest('.nav-btn');
+  if (!btn) return;
+  showScreen(btn.dataset.screen);
+});
+
+// ══════════════════════════════════════
+// PERMISSION
+// ══════════════════════════════════════
+document.getElementById('grant-perm-btn').addEventListener('click', async () => {
+  try {
+    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: true });
+    s.getTracks().forEach(t => t.stop());
+    showScreen('feed');
+  } catch(e) {
+    // Try video only if audio fails
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
+      s.getTracks().forEach(t => t.stop());
+      showScreen('feed');
+    } catch(e2) {
+      document.getElementById('perm-denied-msg').style.display = 'block';
+    }
+  }
+});
+
+// ══════════════════════════════════════
+// CAMERA
+// ══════════════════════════════════════
+async function startCamera() {
+  try {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    // Request audio too (needed for MediaRecorder in some browsers)
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode, width: { ideal: 1080 }, height: { ideal: 1440 } },
+        audio: true
+      });
+    } catch(audioErr) {
+      // Fallback: video only if audio permission denied
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode, width: { ideal: 1080 }, height: { ideal: 1440 } },
+        audio: false
+      });
+    }
+    $viewfinder.srcObject = stream;
+    // Mute viewfinder (we don't want to hear ourselves)
+    $viewfinder.muted = true;
+    $viewfinder.volume = 0;
+    // Explicit play for iOS Safari
+    try { await $viewfinder.play(); } catch(playErr) { console.warn('Viewfinder play():', playErr); }
+  } catch(e) {
+    console.error('Camera error', e);
+  }
+}
+
+function stopCamera() {
+  // Don't kill stream while MediaRecorder is using it
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') return;
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+    $viewfinder.srcObject = null;
+  }
+}
+
+document.getElementById('flip-btn').addEventListener('click', () => {
+  facingMode = facingMode === 'environment' ? 'user' : 'environment';
+  if (currentScreen === 'camera') startCamera();
+});
+
+// Shutter: tap = photo, hold = video
+const $shutterBtn = document.getElementById('shutter-btn');
+const $recTimer = document.getElementById('rec-timer');
+const $recProgress = document.getElementById('rec-progress');
+const $cameraHint = document.getElementById('camera-hint');
+let holdTimeout = null;
+let isRecording = false;
+
+function takePhoto() {
+  if (!stream) return;
+  const track = stream.getVideoTracks()[0];
+  const settings = track.getSettings();
+  const w = settings.width || $viewfinder.videoWidth || 1080;
+  const h = settings.height || $viewfinder.videoHeight || 1440;
+  $canvas.width = w;
+  $canvas.height = h;
+  const ctx = $canvas.getContext('2d');
+  if (facingMode === 'user') { ctx.translate(w, 0); ctx.scale(-1, 1); }
+  ctx.drawImage($viewfinder, 0, 0, w, h);
+  ctx.setTransform(1,0,0,1,0,0);
+  capturedDataUrl = $canvas.toDataURL('image/jpeg', 0.88);
+  capturedVideoBlob = null;
+  isVideoCapture = false;
+  $flash.classList.add('fire');
+  setTimeout(() => $flash.classList.remove('fire'), 150);
+  setTimeout(() => openEditor(), 180);
+}
+
+function startRecording() {
+  if (!stream || isRecording) return;
+
+  // Check if MediaRecorder is available at all
+  if (typeof MediaRecorder === 'undefined') {
+    console.error('MediaRecorder not supported');
+    takePhoto();
+    return;
+  }
+
+  // Find a supported mime type - try MP4 first for Safari/iOS
+  const types = [
+    'video/mp4;codecs=h264,aac',
+    'video/mp4;codecs=avc1',
+    'video/mp4',
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
+    'video/webm',
+  ];
+  let mimeType = '';
+  for (const t of types) {
+    try {
+      if (MediaRecorder.isTypeSupported(t)) {
+        mimeType = t;
+        break;
+      }
+    } catch(e) {}
+  }
+  console.log('Selected mimeType:', mimeType || '(default)');
+
+  try {
+    const opts = {};
+    if (mimeType) opts.mimeType = mimeType;
+    // Use lower bitrate for mobile
+    opts.videoBitsPerSecond = 2500000;
+    mediaRecorder = new MediaRecorder(stream, opts);
+    console.log('MediaRecorder created, actual mimeType:', mediaRecorder.mimeType);
+  } catch(recErr) {
+    console.error('MediaRecorder init failed:', recErr);
+    // Try without any options
+    try {
+      mediaRecorder = new MediaRecorder(stream);
+      console.log('MediaRecorder created with defaults, mimeType:', mediaRecorder.mimeType);
+    } catch(recErr2) {
+      console.error('MediaRecorder fallback also failed:', recErr2);
+      takePhoto();
+      return;
+    }
+  }
+
+  isRecording = true;
+  recordingChunks = [];
+  $shutterBtn.classList.add('recording');
+  $recTimer.style.display = 'flex';
+  $cameraHint.style.display = 'none';
+  recordingStart = Date.now();
+
+  mediaRecorder.ondataavailable = e => {
+    console.log('Data chunk:', e.data ? e.data.size : 0);
+    if (e.data && e.data.size > 0) recordingChunks.push(e.data);
+  };
+  mediaRecorder.onstop = () => {
+    const actualType = mediaRecorder.mimeType || 'video/webm';
+    const blob = new Blob(recordingChunks, { type: actualType });
+    console.log('Recording done. Blob size:', blob.size, 'type:', actualType, 'chunks:', recordingChunks.length);
+    if (blob.size === 0) {
+      console.error('Recording produced empty blob');
+      isVideoCapture = false;
+      capturedVideoBlob = null;
+      return;
+    }
+    capturedVideoBlob = blob;
+    capturedDataUrl = null;
+    isVideoCapture = true;
+    // Now safe to stop the camera
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+      $viewfinder.srcObject = null;
+    }
+    openEditor();
+  };
+  // Safari can have issues with small timeslice; use 1000ms or no timeslice
+  try {
+    mediaRecorder.start(1000);
+  } catch(startErr) {
+    console.error('start(1000) failed, trying start():', startErr);
+    try { mediaRecorder.start(); } catch(e2) {
+      console.error('start() also failed:', e2);
+      isRecording = false;
+      $shutterBtn.classList.remove('recording');
+      $recTimer.style.display = 'none';
+      takePhoto();
+      return;
+    }
+  }
+
+  // Update timer
+  const circumference = 2 * Math.PI * 38; // ~238
+  recordingTimer = setInterval(() => {
+    const elapsed = (Date.now() - recordingStart) / 1000;
+    const secs = Math.min(elapsed, MAX_VIDEO_SEC);
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    const cs = Math.floor((secs % 1) * 10);
+    $recTimer.textContent = m + ':' + String(s).padStart(2, '0');
+    // Progress ring
+    const progress = secs / MAX_VIDEO_SEC;
+    $recProgress.style.strokeDashoffset = circumference * (1 - progress);
+    if (elapsed >= MAX_VIDEO_SEC) stopRecording();
+  }, 100);
+}
+
+function stopRecording() {
+  if (!isRecording) return;
+  isRecording = false;
+  clearInterval(recordingTimer);
+  $shutterBtn.classList.remove('recording');
+  $recTimer.style.display = 'none';
+  $recProgress.style.strokeDashoffset = 238;
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    // Request any remaining data
+    try { mediaRecorder.requestData(); } catch(e) {}
+    // Small delay to let final data arrive, then stop
+    setTimeout(() => {
+      try { mediaRecorder.stop(); } catch(e) { console.error('stop() error:', e); }
+    }, 100);
+  }
+}
+
+// Touch/mouse events for hold detection
+// Use touchstart/touchend on mobile, mousedown/mouseup on desktop
+let pointerDown = false;
+let isTouchDevice = false;
+
+function shutterDown(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  pointerDown = true;
+  holdTimeout = setTimeout(() => {
+    if (pointerDown) startRecording();
+  }, 400); // 400ms hold = video mode
+}
+
+function shutterUp(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  if (isRecording) {
+    stopRecording();
+  } else {
+    clearTimeout(holdTimeout);
+    if (pointerDown) takePhoto();
+  }
+  pointerDown = false;
+}
+
+function shutterCancel(e) {
+  if (isRecording) stopRecording();
+  else clearTimeout(holdTimeout);
+  pointerDown = false;
+}
+
+// Touch events (mobile)
+$shutterBtn.addEventListener('touchstart', e => {
+  isTouchDevice = true;
+  shutterDown(e);
+}, { passive: false });
+$shutterBtn.addEventListener('touchend', e => shutterUp(e), { passive: false });
+$shutterBtn.addEventListener('touchcancel', e => shutterCancel(e), { passive: false });
+
+// Mouse events (desktop fallback, skip if touch device)
+$shutterBtn.addEventListener('mousedown', e => {
+  if (isTouchDevice) return;
+  shutterDown(e);
+});
+$shutterBtn.addEventListener('mouseup', e => {
+  if (isTouchDevice) return;
+  shutterUp(e);
+});
+$shutterBtn.addEventListener('mouseleave', e => {
+  if (isTouchDevice) return;
+  shutterCancel(e);
+});
+
+// Prevent context menu on long press (mobile)
+$shutterBtn.addEventListener('contextmenu', e => e.preventDefault());
+
+// ══════════════════════════════════════
+// EDITOR
+// ══════════════════════════════════════
+function openEditor() {
+  const $editVideo = document.getElementById('edit-video');
+  $captionInput.value = '';
+  currentFilter = 'none';
+
+  if (isVideoCapture && capturedVideoBlob) {
+    console.log('Opening editor with video. Blob size:', capturedVideoBlob.size, 'type:', capturedVideoBlob.type);
+    $editPhoto.classList.add('hidden');
+    $editVideo.classList.remove('hidden');
+    // Create fresh blob URL
+    const videoUrl = URL.createObjectURL(capturedVideoBlob);
+    console.log('Video blob URL:', videoUrl);
+    $editVideo.onloadeddata = () => {
+      console.log('Video loaded, playing...');
+      $editVideo.play().catch(err => console.error('Play failed:', err));
+    };
+    $editVideo.onerror = () => {
+      console.error('Video element error:', $editVideo.error);
+    };
+    // Set attributes before src
+    $editVideo.loop = true;
+    $editVideo.muted = true;
+    $editVideo.playsInline = true;
+    $editVideo.className = 'filter-none';
+    $editVideo.src = videoUrl;
+  } else {
+    $editVideo.classList.add('hidden');
+    $editVideo.src = '';
+    $editPhoto.classList.remove('hidden');
+    $editPhoto.src = capturedDataUrl;
+    $editPhoto.className = 'filter-none';
+  }
+
+  buildFilterBar();
+  showScreen('edit');
+}
+
+function buildFilterBar() {
+  $filterBar.innerHTML = '';
+  FILTERS.forEach(f => {
+    const opt = document.createElement('div');
+    opt.className = 'filter-opt' + (f.id === currentFilter ? ' active' : '');
+    const thumbSrc = isVideoCapture ? '' : capturedDataUrl;
+    opt.innerHTML = '<div class="filter-thumb ' + f.css + '" style="width:56px;height:56px;border-radius:8px;border:2px solid transparent;background:var(--bg-mid);' + (thumbSrc ? 'background-image:url(' + thumbSrc + ');background-size:cover;' : '') + '"></div><div class="filter-name">' + f.name + '</div>';
+    if (isVideoCapture && f.id === currentFilter) opt.querySelector('.filter-thumb').style.borderColor = 'var(--gold)';
+    opt.addEventListener('click', () => {
+      currentFilter = f.id;
+      if (isVideoCapture) document.getElementById('edit-video').className = f.css;
+      else $editPhoto.className = f.css;
+      $filterBar.querySelectorAll('.filter-opt').forEach(o => o.classList.remove('active'));
+      opt.classList.add('active');
+    });
+    $filterBar.appendChild(opt);
+  });
+}
+
+document.getElementById('discard-btn').addEventListener('click', () => {
+  // Clean up
+  const $editVideo = document.getElementById('edit-video');
+  if ($editVideo.src) { URL.revokeObjectURL($editVideo.src); $editVideo.src = ''; }
+  capturedDataUrl = null;
+  capturedVideoBlob = null;
+  isVideoCapture = false;
+  showScreen('camera');
+});
+
+document.getElementById('publish-btn').addEventListener('click', () => {
+  const post = {
+    id: 'u' + Date.now(),
+    username: userProfile.username,
+    avatar: userProfile.avatar,
+    img: '',
+    caption: $captionInput.value.trim(),
+    filter: currentFilter,
+    time: Date.now(),
+    likes: 0,
+    liked: false,
+    own: true,
+    isVideo: isVideoCapture,
+  };
+
+  if (isVideoCapture && capturedVideoBlob) {
+    // Store video as blob URL (lives in memory for this session)
+    post.img = URL.createObjectURL(capturedVideoBlob);
+    post._videoBlob = capturedVideoBlob; // keep reference so URL stays valid
+    posts.unshift(post);
+    savePostsFiltered(); // save only non-video posts to localStorage
+  } else {
+    post.img = capturedDataUrl;
+    posts.unshift(post);
+    savePostsFiltered();
+  }
+  capturedDataUrl = null;
+  capturedVideoBlob = null;
+  isVideoCapture = false;
+  showScreen('feed');
+});
+
+// Save posts but skip video blob data (too large for localStorage)
+function savePostsFiltered() {
+  try {
+    const saveable = posts.map(p => {
+      if (p.isVideo) {
+        // Save video post metadata but not the blob URL (it won't survive page reload)
+        return Object.assign({}, p, { img: '', _videoBlob: undefined });
+      }
+      return Object.assign({}, p, { _videoBlob: undefined });
+    });
+    localStorage.setItem('rawpic_posts', JSON.stringify(saveable));
+  } catch(e) { console.error('Save error:', e); }
+}
+
+function savePosts() {
+  savePostsFiltered();
+}
+
+// ══════════════════════════════════════
+// FEED
+// ══════════════════════════════════════
+function timeAgo(ts) {
+  const diff = Math.floor((Date.now() - ts) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return Math.floor(diff/86400) + 'd ago';
+}
+
+function filterClass(id) {
+  const f = FILTERS.find(x => x.id === id);
+  return f ? f.css : 'filter-none';
+}
+
+function renderFeed() {
+  const allPosts = [...posts, ...MOCK_POSTS];
+  allPosts.sort((a,b) => b.time - a.time);
+
+  if (allPosts.length === 0) {
+    $feedScroll.innerHTML = '<div class="feed-empty">No posts yet.<br>Be the first — tap the camera.</div>';
+    return;
+  }
+
+  // Filter out video posts with no blob (lost on page reload)
+  const validPosts = allPosts.filter(p => !p.isVideo || p.img);
+  $feedScroll.innerHTML = validPosts.map(p => `
+    <div class="post-card" data-id="${p.id}">
+      <div class="post-header" data-username="${p.username}" style="cursor:pointer">
+        <div class="post-avatar">${p.avatar}</div>
+        <div>
+          <div class="post-username">${p.username}</div>
+          <div class="post-time">${timeAgo(p.time)}</div>
+        </div>
+      </div>
+      <div class="post-img-wrap">
+        ${p.isVideo
+          ? `<video src="${p.img}" class="${filterClass(p.filter)}" autoplay playsinline muted loop></video><div class="video-badge">VIDEO</div>`
+          : `<img src="${p.img}" class="${filterClass(p.filter)}" alt="" loading="lazy">`}
+        ${p.caption ? `<div class="post-caption-overlay">${escHtml(p.caption)}</div>` : ''}
+      </div>
+      <div class="post-actions">
+        <button class="like-btn ${p.liked ? 'liked' : ''}" data-id="${p.id}">
+          <svg viewBox="0 0 24 24" fill="${p.liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span>${p.likes || ''}</span>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+$feedScroll.addEventListener('click', e => {
+  const btn = e.target.closest('.like-btn');
+  if (!btn) return;
+  const id = btn.dataset.id;
+
+  // Find in user posts or mock
+  let p = posts.find(x => x.id === id) || MOCK_POSTS.find(x => x.id === id);
+  if (!p) return;
+
+  p.liked = !p.liked;
+  p.likes += p.liked ? 1 : -1;
+  if (p.likes < 0) p.likes = 0;
+
+  // Animate
+  btn.classList.toggle('liked', p.liked);
+  btn.querySelector('svg').setAttribute('fill', p.liked ? 'currentColor' : 'none');
+  // Bolt glow effect
+  if (p.liked) btn.style.textShadow = '0 0 12px rgba(245,166,35,.5)';
+  else btn.style.textShadow = 'none';
+  btn.querySelector('span').textContent = p.likes || '';
+  if (p.liked) {
+    btn.classList.add('pop');
+    setTimeout(() => btn.classList.remove('pop'), 450);
+  }
+
+  savePosts();
+});
+
+// Handle username clicks in feed
+$feedScroll.addEventListener('click', e => {
+  const header = e.target.closest('.post-header');
+  if (header && !e.target.closest('.like-btn')) {
+    const username = header.dataset.username;
+    if (username) {
+      // Check if it's the current user
+      if (username === userProfile.username) {
+        showScreen('profile');
+      } else {
+        viewUserProfile(username);
+      }
+    }
+  }
+});
+
+
+function viewUserProfile(username) {
+  // Find mock user
+  const mockUser = MOCK_USERS.find(u => u.username === username);
+  if (!mockUser) return;
+
+  viewingUser = username;
+
+  const avatarEl = document.getElementById('profile-avatar');
+  avatarEl.innerHTML = '';
+  avatarEl.textContent = mockUser.avatar;
+
+  document.getElementById('profile-name').textContent = mockUser.name;
+  document.getElementById('profile-bio').textContent = mockUser.bio;
+  document.getElementById('profile-bio').style.display = mockUser.bio ? 'block' : 'none';
+  $profileStats.textContent = mockUser.photos + ' photo' + (mockUser.photos !== 1 ? 's' : '');
+  document.getElementById('following-count').textContent = Math.floor(Math.random() * 20) + 5;
+  document.getElementById('followers-count').textContent = mockUser.followers;
+
+  // Show their mock posts from feed
+  const theirPosts = MOCK_POSTS.filter(p => p.username === username);
+  $profileEmpty.style.display = theirPosts.length ? 'none' : 'block';
+  $profileGrid.innerHTML = theirPosts.map(p =>
+    p.isVideo
+      ? '<video src="' + p.img + '" class="' + filterClass(p.filter) + '" data-post-id="' + p.id + '" autoplay playsinline muted loop></video>'
+      : '<img src="' + p.img + '" class="' + filterClass(p.filter) + '" data-post-id="' + p.id + '" alt="">'
+  ).join('');
+
+  // Show back button, hide edit button
+  document.getElementById('profile-back-btn').classList.remove('hidden');
+  document.getElementById('edit-profile-btn').classList.add('hidden');
+
+  showScreen('profile');
+}
+
+document.getElementById('profile-back-btn').addEventListener('click', () => {
+  viewingUser = null;
+  document.getElementById('profile-back-btn').classList.add('hidden');
+  document.getElementById('edit-profile-btn').classList.remove('hidden');
+  showScreen('feed');
+});
+
+// ══════════════════════════════════════
+// PROFILE
+// ══════════════════════════════════════
+function renderProfile() {
+  // Reset to own profile view
+  viewingUser = null;
+  document.getElementById('profile-back-btn').classList.add('hidden');
+  document.getElementById('edit-profile-btn').classList.remove('hidden');
+
+  const mine = posts.filter(p => p.own);
+  const avatarEl = document.getElementById('profile-avatar');
+  if (userProfile.avatarType === 'photo') {
+    avatarEl.innerHTML = '<img src="' + userProfile.avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="avatar">';
+  } else {
+    avatarEl.innerHTML = '';
+    avatarEl.textContent = userProfile.avatar;
+  }
+  document.getElementById('profile-name').textContent = userProfile.name || userProfile.username;
+  document.getElementById('profile-bio').textContent = userProfile.bio || '';
+  document.getElementById('profile-bio').style.display = userProfile.bio ? 'block' : 'none';
+  $profileStats.textContent = mine.length + ' photo' + (mine.length !== 1 ? 's' : '');
+  document.getElementById('following-count').textContent = userProfile.following.length;
+  document.getElementById('followers-count').textContent = Math.floor(Math.random() * 5) + userProfile.following.length; // mock
+  $profileEmpty.style.display = mine.length ? 'none' : 'block';
+  $profileGrid.innerHTML = mine.map(p =>
+    p.isVideo && p.img
+      ? `<video src="${p.img}" class="${filterClass(p.filter)}" data-post-id="${p.id}" autoplay playsinline muted loop></video>`
+      : `<img src="${p.img}" class="${filterClass(p.filter)}" data-post-id="${p.id}" alt="">`
+  ).join('');
+}
+
+// ══════════════════════════════════════
+// SEARCH / DISCOVER
+// ══════════════════════════════════════
+function renderSearch(query) {
+  const q = (query || '').toLowerCase().trim();
+  const users = q
+    ? MOCK_USERS.filter(u => u.username.includes(q) || u.name.toLowerCase().includes(q))
+    : MOCK_USERS;
+
+  if (users.length === 0) {
+    $searchResults.innerHTML = '<div style="text-align:center;padding:40px;color:var(--cream-dim)">No users found</div>';
+    return;
+  }
+
+  $searchResults.innerHTML = users.map(u => {
+    const isFollowing = userProfile.following.includes(u.username);
+    return `
+      <div class="search-user-card" data-username="${u.username}">
+        <div class="search-user-avatar">${u.avatar}</div>
+        <div class="search-user-info">
+          <div class="search-user-name">${u.name}</div>
+          <div class="search-user-bio">${u.bio}</div>
+          <div class="search-user-photos">${u.photos} photos · ${u.followers} followers</div>
+        </div>
+        <button class="follow-btn ${isFollowing ? 'following' : ''}" data-username="${u.username}">
+          ${isFollowing ? 'Following' : 'Follow'}
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+$searchInput.addEventListener('input', (e) => {
+  renderSearch(e.target.value);
+});
+
+$searchResults.addEventListener('click', e => {
+  // Follow/unfollow button
+  const btn = e.target.closest('.follow-btn');
+  if (btn) {
+    const username = btn.dataset.username;
+    const idx = userProfile.following.indexOf(username);
+    if (idx >= 0) {
+      userProfile.following.splice(idx, 1);
+      btn.classList.remove('following');
+      btn.textContent = 'Follow';
+    } else {
+      userProfile.following.push(username);
+      btn.classList.add('following');
+      btn.textContent = 'Following';
+    }
+    saveProfile();
+    return;
+  }
+  // Click on user card -> go to profile
+  const card = e.target.closest('.search-user-card');
+  if (card) {
+    const username = card.dataset.username;
+    if (username) viewUserProfile(username);
+  }
+});
+
+// ══════════════════════════════════════
+// EDIT PROFILE
+// ══════════════════════════════════════
+let selectedAvatar = userProfile.avatar;
+let selectedAvatarType = userProfile.avatarType || 'emoji';
+
+function updateAvatarPreview() {
+  const preview = document.getElementById('modal-avatar-preview');
+  if (selectedAvatarType === 'photo') {
+    preview.innerHTML = '<img src="' + selectedAvatar + '" alt="avatar">';
+  } else {
+    preview.innerHTML = '';
+    preview.textContent = selectedAvatar;
+  }
+}
+
+function openEditProfile() {
+  document.getElementById('modal-name').value = userProfile.name;
+  document.getElementById('modal-username').value = userProfile.username;
+  document.getElementById('modal-bio').value = userProfile.bio;
+  selectedAvatar = userProfile.avatar;
+  selectedAvatarType = userProfile.avatarType || 'emoji';
+  updateAvatarPreview();
+
+  // Build photo picker from user's own posts
+  const myPhotos = posts.filter(p => p.own);
+  const photoPicker = document.getElementById('avatar-photo-picker');
+  if (myPhotos.length > 0) {
+    photoPicker.innerHTML =
+      '<div class="avatar-photo-picker-label">Choose from your photos</div>' +
+      myPhotos.map(p =>
+        '<div class="avatar-photo-opt ' + (selectedAvatarType === 'photo' && selectedAvatar === p.img ? 'selected' : '') + '" data-photo-src="' + p.img + '"><img src="' + p.img + '" class="' + filterClass(p.filter) + '" alt=""></div>'
+      ).join('');
+  } else {
+    photoPicker.innerHTML = '<div class="avatar-no-photos">Take some photos first to use one as your avatar 📸</div>';
+  }
+
+  // Build emoji picker (fallback)
+  const picker = document.getElementById('emoji-picker');
+  picker.innerHTML = AVATAR_EMOJIS.map(e =>
+    '<div class="emoji-opt ' + (selectedAvatarType === 'emoji' && e === selectedAvatar ? 'selected' : '') + '" data-emoji="' + e + '">' + e + '</div>'
+  ).join('');
+
+  $editProfileModal.classList.remove('hidden');
+}
+
+$editProfileModal.addEventListener('click', e => {
+  // Photo selection
+  const photoOpt = e.target.closest('.avatar-photo-opt');
+  if (photoOpt) {
+    selectedAvatar = photoOpt.dataset.photoSrc;
+    selectedAvatarType = 'photo';
+    updateAvatarPreview();
+    document.querySelectorAll('.avatar-photo-opt').forEach(o => o.classList.toggle('selected', o.dataset.photoSrc === selectedAvatar));
+    document.querySelectorAll('.emoji-opt').forEach(o => o.classList.remove('selected'));
+    return;
+  }
+  // Emoji selection
+  const emojiOpt = e.target.closest('.emoji-opt');
+  if (emojiOpt) {
+    selectedAvatar = emojiOpt.dataset.emoji;
+    selectedAvatarType = 'emoji';
+    updateAvatarPreview();
+    document.querySelectorAll('.emoji-opt').forEach(o => o.classList.toggle('selected', o.dataset.emoji === selectedAvatar));
+    document.querySelectorAll('.avatar-photo-opt').forEach(o => o.classList.remove('selected'));
+    return;
+  }
+  // Close on overlay click
+  if (e.target === $editProfileModal) {
+    $editProfileModal.classList.add('hidden');
+  }
+});
+
+document.getElementById('modal-cancel').addEventListener('click', () => {
+  $editProfileModal.classList.add('hidden');
+});
+
+document.getElementById('modal-save').addEventListener('click', () => {
+  const newName = document.getElementById('modal-name').value.trim();
+  const newUsername = document.getElementById('modal-username').value.trim().toLowerCase().replace(/[^a-z0-9._]/g, '');
+  const newBio = document.getElementById('modal-bio').value.trim();
+
+  if (newName) userProfile.name = newName;
+  if (newUsername) userProfile.username = newUsername;
+  userProfile.bio = newBio;
+  userProfile.avatar = selectedAvatar;
+  userProfile.avatarType = selectedAvatarType;
+  saveProfile();
+  $editProfileModal.classList.add('hidden');
+  renderProfile();
+});
+
+document.getElementById('edit-profile-btn').addEventListener('click', openEditProfile);
+
+// ══════════════════════════════════════
+// POST DETAIL (from grid)
+// ══════════════════════════════════════
+const $postDetailOverlay = document.getElementById('post-detail-overlay');
+const $postDetailContent = document.getElementById('post-detail-content');
+
+function openPostDetail(postId) {
+  const p = posts.find(x => x.id === postId) || MOCK_POSTS.find(x => x.id === postId);
+  if (!p) return;
+
+  $postDetailContent.innerHTML = '<div class="post-card" data-id="' + p.id + '">' +
+    '<div class="post-header" data-username="' + p.username + '" style="cursor:pointer">' +
+      '<div class="post-avatar">' + p.avatar + '</div>' +
+      '<div>' +
+        '<div class="post-username">' + p.username + '</div>' +
+        '<div class="post-time">' + timeAgo(p.time) + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="post-img-wrap">' +
+      (p.isVideo
+        ? '<video src="' + p.img + '" class="' + filterClass(p.filter) + '" autoplay playsinline muted loop></video><div class="video-badge">5s</div>'
+        : '<img src="' + p.img + '" class="' + filterClass(p.filter) + '" alt="">') +
+      (p.caption ? '<div class="post-caption-overlay">' + escHtml(p.caption) + '</div>' : '') +
+    '</div>' +
+    '<div class="post-actions">' +
+      '<button class="like-btn ' + (p.liked ? 'liked' : '') + '" data-id="' + p.id + '">' +
+        '<svg viewBox="0 0 24 24" fill="' + (p.liked ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' +
+        '<span>' + (p.likes || '') + '</span>' +
+      '</button>' +
+    '</div>' +
+  '</div>';
+
+  $postDetailOverlay.classList.remove('hidden');
+}
+
+function closePostDetail() {
+  $postDetailOverlay.classList.add('hidden');
+  $postDetailContent.innerHTML = '';
+}
+
+// Close button
+document.getElementById('post-detail-close').addEventListener('click', closePostDetail);
+
+// Close on overlay background click
+$postDetailOverlay.addEventListener('click', e => {
+  if (e.target === $postDetailOverlay) closePostDetail();
+});
+
+// Like handler inside detail modal
+$postDetailContent.addEventListener('click', e => {
+  const btn = e.target.closest('.like-btn');
+  if (btn) {
+    const id = btn.dataset.id;
+    let p = posts.find(x => x.id === id) || MOCK_POSTS.find(x => x.id === id);
+    if (!p) return;
+    p.liked = !p.liked;
+    p.likes += p.liked ? 1 : -1;
+    if (p.likes < 0) p.likes = 0;
+    btn.classList.toggle('liked', p.liked);
+    btn.querySelector('svg').setAttribute('fill', p.liked ? 'currentColor' : 'none');
+    btn.querySelector('span').textContent = p.likes || '';
+    if (p.liked) {
+      btn.classList.add('pop');
+      setTimeout(function() { btn.classList.remove('pop'); }, 450);
+    }
+    savePosts();
+    return;
+  }
+});
+
+// Grid click handler (works for both own profile and other user profiles)
+$profileGrid.addEventListener('click', e => {
+  const el = e.target.closest('[data-post-id]');
+  if (el) {
+    openPostDetail(el.dataset.postId);
+  }
+});
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+(async () => {
+  try {
+    if (navigator.permissions) {
+      const status = await navigator.permissions.query({ name: 'camera' });
+      if (status.state === 'granted') {
+        showScreen('feed');
+        return;
+      }
+    }
+  } catch(e) {}
+  showScreen('permission');
+})();
+</script>
+</body>
+</html>
