@@ -1,0 +1,4 @@
+*.backup*.html
+index.new.html
+index.v1-*.html
+setup.sql
